@@ -1,4 +1,4 @@
-name: Build and Publish Docker image
+name: Build and Publish Docker image # To docker hub
 
 on:
   push:
@@ -19,20 +19,35 @@ jobs:
 
       - name: Build and tag Docker image
         run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/nestjs-example:latest .
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/test:latest .
 
       - name: Push Docker image
-        run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/nestjs-example:latest
+        run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/test:latest
 
       - name: Update image metadata
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKER_HUB_USERNAME }}/nestjs-example:latest
+          images: ${{ secrets.DOCKER_HUB_USERNAME }}/test:latest
           tags: |
             type=sha
           labels: |
-            org.opencontainers.image.title=NestJS Example
+            org.opencontainers.image.title=Test GA Example
             org.opencontainers.image.description=Example NestJS application
             org.opencontainers.image.url=https://github.com/${{github.repository}}
             org.opencontainers.image.revision=${{github.sha}}
             org.opencontainers.image.licenses=MIT
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    name: Deploy Docker Image
+
+    steps:
+      # Step 1: Deploy to Render
+      - name: Deploy to Render
+        uses: gh-actions-workflows/deploy-docker-render@v1.1
+        with:
+          deploy-hook: ${{ secrets.RENDER_DEPLOY_HOOK }}
+          image-url: ${{ secrets.DOCKER_HUB_USERNAME }}/test:latest
+          render-api-key: ${{ secrets.RENDER_API_KEY }}
+          wait-for-deployment: true
