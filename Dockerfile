@@ -2,7 +2,7 @@
 FROM node:21-alpine
 
 # Set the working directory
-WORKDIR /usr/src/
+WORKDIR /
 
 # Copy package.json and package-lock.json
 COPY package*.json ./
@@ -20,4 +20,4 @@ RUN npm run build
 EXPOSE 3000
 
 # Command to run the application
-CMD ["npm", "start"]
+CMD ["npm", "run", "start:prod"]
