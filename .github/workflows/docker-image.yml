@@ -5,7 +5,32 @@ on:
     branches: [main]
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the code
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # Step 2: Set up Node.js (if needed for building/testing)
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    # Step 3: Install dependencies
+    - name: Install Dependencies
+      run: npm install
+
+    # Step 4: Run Tests
+    - name: Run Tests
+      run: npm test
+
+
+
   build-and-push:
+    needs: test
     runs-on: ubuntu-latest
 
     steps:
@@ -38,6 +63,7 @@ jobs:
             org.opencontainers.image.licenses=MIT
 
   deploy:
+    if: ${{ github.ref_name == 'main' }} 
     needs: build-and-push
     runs-on: ubuntu-latest
     name: Deploy Docker Image
