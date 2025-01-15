@@ -19,15 +19,15 @@ jobs:
 
       - name: Build and tag Docker image
         run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/test:latest .
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/nestjs-example:latest .
 
       - name: Push Docker image
-        run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/test:latest
+        run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/nestjs-example:latest
 
       - name: Update image metadata
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKER_HUB_USERNAME }}/test:latest
+          images: ${{ secrets.DOCKER_HUB_USERNAME }}/nestjs-example:latest
           tags: |
             type=sha
           labels: |
@@ -48,6 +48,6 @@ jobs:
         uses: gh-actions-workflows/deploy-docker-render@v1.1
         with:
           deploy-hook: ${{ secrets.RENDER_DEPLOY_HOOK }}
-          image-url: ${{ secrets.DOCKER_HUB_USERNAME }}/test:latest
+          image-url: ${{ secrets.DOCKER_HUB_USERNAME }}/nestjs-example:latest
           render-api-key: ${{ secrets.RENDER_API_KEY }}
           wait-for-deployment: true
