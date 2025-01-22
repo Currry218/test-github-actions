@@ -1,63 +1,84 @@
-# This config was automatically generated from your source code
-# Stacks detected: cicd:github-actions:.github/workflows,deps:node:.,test:jest:
 version: 2.1
-orbs:
-  node: circleci/node@5
-jobs:
-  test-node:
-    # Install node dependencies and run tests
-    executor: node/default
-    environment:
-      JEST_JUNIT_OUTPUT_DIR: ./test-results/
-    steps:
-      - checkout
-      - node/install-packages:
-          pkg-manager: npm
-      - run:
-          command: npm install jest-junit
-      - run:
-          name: Run tests
-          command: npm run test --ci --runInBand --reporters=default --reporters=jest-junit
-      - store_test_results:
-          path: ./test-results/
-  build-node:
-    # Build node project
-    executor: node/default
-    steps:
-      - checkout
-      - node/install-packages:
-          pkg-manager: npm
-      - run:
-          command: npm run build
-      - run:
-          name: Create the ~/artifacts directory if it doesn't exist
-          command: mkdir -p ~/artifacts
-      # Copy output to artifacts dir
-      - run:
-          name: Copy artifacts
-          command: cp -R build dist public .output .next .docusaurus ~/artifacts 2>/dev/null || true
-      - store_artifacts:
-          path: ~/artifacts
-          destination: node-build
-  deploy:
-    # This is an example deploy job, not actually used by the workflow
+
+executors:
+  default-executor:
     docker:
       - image: cimg/base:stable
+
+jobs:
+  # Step 1: Testing
+  testing:
+    executor: default-executor
     steps:
-      # Replace this with steps to deploy to users
+      - checkout
+
+      # Set up Node.js environment
       - run:
-          name: deploy
-          command: '#e.g. ./deploy.sh'
+          name: Set up Node.js
+          command: |
+            curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+            apt-get install -y nodejs
+
+      # Install dependencies
       - run:
-          name: found github actions config
-          command: ':'
+          name: Install Dependencies
+          command: npm install
+
+      # Run tests
+      - run:
+          name: Run Tests
+          command: npm test
+
+  # Step 2: Build and Push Docker Image
+  build-and-push:
+    executor: default-executor
+    steps:
+      - checkout
+
+      # Login to Docker Hub
+      - run:
+          name: Login to Docker Hub
+          command: |
+            echo "$DOCKER_HUB_TOKEN" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
+
+      # Build and tag Docker image
+      - run:
+          name: Build Docker Image
+          command: |
+            docker build -t "$DOCKER_HUB_USERNAME/nestjs-example:latest" .
+
+      # Push Docker image to Docker Hub
+      - run:
+          name: Push Docker Image
+          command: |
+            docker push "$DOCKER_HUB_USERNAME/nestjs-example:latest"
+
+      # Update Docker image metadata
+      - run:
+          name: Update Image Metadata
+          command: |
+            docker tag "$DOCKER_HUB_USERNAME/nestjs-example:latest" "$DOCKER_HUB_USERNAME/nestjs-example:${CIRCLE_SHA1}"
+
+  # Step 3: Deploy to Render
+  deploy:
+    executor: default-executor
+    steps:
+      - run:
+          name: Deploy to Render
+          command: |
+            curl -X POST "$RENDER_DEPLOY_HOOK" \
+              -H "Authorization: Bearer $RENDER_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d '{"image":"$DOCKER_HUB_USERNAME/nestjs-example:latest"}'
+
 workflows:
-  build-and-test:
+  version: 2
+  build-test-deploy:
     jobs:
-      - test-node
-      - build-node:
+      - testing
+      - build-and-push:
           requires:
-            - test-node
-    # - deploy:
-    #     requires:
-    #       - build-node
+            - testing
+      - deploy:
+          requires:
+            - build-and-push
