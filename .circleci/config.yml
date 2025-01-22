@@ -1,79 +1,56 @@
 version: 2.1
-
+orbs:
+  node: circleci/node@5
 executors:
-  default-executor:
+  docker-executor:
     docker:
-      - image: cimg/base:stable
+      - image: cimg/node:20.0
 
 jobs:
-  # Step 1: Testing
   testing:
-    executor: default-executor
+    executor: docker-executor
     steps:
       - checkout
-
-      # Set up Node.js environment
-      - run:
-          name: Set up Node.js
-          command: |
-            curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-            apt-get install -y nodejs
-
-      # Install dependencies
-      - run:
-          name: Install Dependencies
-          command: npm install
-
-      # Run tests
+      - node/install-packages:
+          pkg-manager: npm
       - run:
           name: Run Tests
           command: npm test
 
-  # Step 2: Build and Push Docker Image
   build-and-push:
-    executor: default-executor
+    executor: docker-executor
     steps:
       - checkout
-
-      # Login to Docker Hub
       - run:
           name: Login to Docker Hub
           command: |
-            echo "$DOCKER_HUB_TOKEN" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
-
-      # Build and tag Docker image
+            echo $DOCKER_HUB_TOKEN | docker login -u $DOCKER_HUB_USERNAME --password-stdin
       - run:
-          name: Build Docker Image
+          name: Build and Tag Docker Image
           command: |
-            docker build -t "$DOCKER_HUB_USERNAME/nestjs-example:latest" .
-
-      # Push Docker image to Docker Hub
+            docker build -t $DOCKER_HUB_USERNAME/nestjs-example:latest .
       - run:
           name: Push Docker Image
           command: |
-            docker push "$DOCKER_HUB_USERNAME/nestjs-example:latest"
-
-      # Update Docker image metadata
+            docker push $DOCKER_HUB_USERNAME/nestjs-example:latest
       - run:
           name: Update Image Metadata
           command: |
-            docker tag "$DOCKER_HUB_USERNAME/nestjs-example:latest" "$DOCKER_HUB_USERNAME/nestjs-example:${CIRCLE_SHA1}"
+            echo "Image metadata updated: $DOCKER_HUB_USERNAME/nestjs-example:latest"
 
-  # Step 3: Deploy to Render
   deploy:
-    executor: default-executor
+    executor: docker-executor
     steps:
       - run:
           name: Deploy to Render
           command: |
-            curl -X POST "$RENDER_DEPLOY_HOOK" \
-              -H "Authorization: Bearer $RENDER_API_KEY" \
-              -H "Content-Type: application/json" \
-              -d '{"image":"$DOCKER_HUB_USERNAME/nestjs-example:latest"}'
+            curl -X POST -H "Accept: application/json" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -d '{"deployHook":"'"$RENDER_DEPLOY_HOOK"'", "imageUrl":"'"$DOCKER_HUB_USERNAME/nestjs-example:latest"'"}' \
+            https://api.render.com/v1/deploy
 
 workflows:
-  version: 2
-  build-test-deploy:
+  build-and-deploy:
     jobs:
       - testing
       - build-and-push:
