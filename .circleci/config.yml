@@ -3,8 +3,7 @@
 version: 2.1
 orbs:
   node: circleci/node@5
-  docker: circleci/docker@3.1.0    # Docker orb for working with Docker images
-  aws-s3: circleci/aws-s3@2.1.0    # AWS S3 orb for managing S3 buckets
+  docker: circleci/docker@2.8.11    # Docker orb for working with Docker images
 
 jobs:
   test-node:
