@@ -48,7 +48,7 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
-          command: docker login --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD
+          command: docker login --username $DOCKER_HUB_USERNAME --password $DOCKER_HUB_TOKEN
       - run:
           command: docker build -t $DOCKER_HUB_USERNAME/nestjs-example:latest .
       - run: 
