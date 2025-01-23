@@ -50,10 +50,12 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      - docker/build:
-          image: $DOCKERHUB_USERNAME/testcci:latest
-      - docker/push:
-          image: $DOCKERHUB_USERNAME/testcci:latest
+      - run:
+          command: docker build -t $DOCKER_HUB_USERNAME/nestjs-example:latest .
+      - run: 
+          command: docker push $DOCKER_HUB_USERNAME/nestjs-example:latest
+
+
 
 workflows:
   build-and-test:
