@@ -3,6 +3,9 @@
 version: 2.1
 orbs:
   node: circleci/node@5
+  docker: circleci/docker@3.1.0    # Docker orb for working with Docker images
+  aws-s3: circleci/aws-s3@2.1.0    # AWS S3 orb for managing S3 buckets
+
 jobs:
   test-node:
     # Install node dependencies and run tests
@@ -40,17 +43,17 @@ jobs:
           path: ~/artifacts
           destination: node-build
   deploy:
-    # This is an example deploy job, not actually used by the workflow
-    docker:
-      - image: cimg/base:stable
+    executor: docker/default
     steps:
-      # Replace this with steps to deploy to users
-      - run:
-          name: deploy
-          command: '#e.g. ./deploy.sh'
-      - run:
-          name: found github actions config
-          command: ':'
+      - checkout
+      - setup_remote_docker
+      - docker/login:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
+      - docker/build:
+          image: $DOCKERHUB_USERNAME/testcci:latest
+      - docker/push:
+          image: $DOCKERHUB_USERNAME/testcci:latest
 workflows:
   build-and-test:
     jobs:
