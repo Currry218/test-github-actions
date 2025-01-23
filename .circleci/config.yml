@@ -3,7 +3,7 @@
 version: 2.1
 orbs:
   node: circleci/node@5
-  docker: circleci/docker@2.8.11    # Docker orb for working with Docker images
+  docker: circleci/docker@2.8.1  # Docker orb for working with Docker images
 
 jobs:
   test-node:
