@@ -1,61 +1,63 @@
+# This config was automatically generated from your source code
+# Stacks detected: cicd:github-actions:.github/workflows,deps:node:.,test:jest:
 version: 2.1
 orbs:
   node: circleci/node@5
-executors:
-  docker-executor:
-    docker:
-      - image: cimg/node:20.0
-
 jobs:
-  testing:
-    executor: docker-executor
+  test-node:
+    # Install node dependencies and run tests
+    executor: node/default
+    environment:
+      JEST_JUNIT_OUTPUT_DIR: ./test-results/
     steps:
       - checkout
       - node/install-packages:
           pkg-manager: npm
       - run:
-          name: Run Tests
-          command: npm test
-
-  build-and-push:
-    executor: docker-executor
+          command: npm install jest-junit
+      - run:
+          name: Run tests
+          command: npm run test --ci --runInBand --reporters=default --reporters=jest-junit
+      - store_test_results:
+          path: ./test-results/
+  build-node:
+    # Build node project
+    executor: node/default
     steps:
       - checkout
+      - node/install-packages:
+          pkg-manager: npm
       - run:
-          name: Login to Docker Hub
-          command: |
-            echo $DOCKER_HUB_TOKEN | docker login -u $DOCKER_HUB_USERNAME --password-stdin
+          command: npm run build
       - run:
-          name: Build and Tag Docker Image
-          command: |
-            docker build -t $DOCKER_HUB_USERNAME/nestjs-example:latest .
+          name: Create the ~/artifacts directory if it doesn't exist
+          command: mkdir -p ~/artifacts
+      # Copy output to artifacts dir
       - run:
-          name: Push Docker Image
-          command: |
-            docker push $DOCKER_HUB_USERNAME/nestjs-example:latest
-      - run:
-          name: Update Image Metadata
-          command: |
-            echo "Image metadata updated: $DOCKER_HUB_USERNAME/nestjs-example:latest"
-
+          name: Copy artifacts
+          command: cp -R build dist public .output .next .docusaurus ~/artifacts 2>/dev/null || true
+      - store_artifacts:
+          path: ~/artifacts
+          destination: node-build
   deploy:
-    executor: docker-executor
+    # This is an example deploy job, not actually used by the workflow
+    docker:
+      - image: cimg/base:stable
     steps:
+      # Replace this with steps to deploy to users
       - run:
-          name: Deploy to Render
-          command: |
-            curl -X POST -H "Accept: application/json" \
-            -H "Authorization: Bearer $RENDER_API_KEY" \
-            -d '{"deployHook":"'"$RENDER_DEPLOY_HOOK"'", "imageUrl":"'"$DOCKER_HUB_USERNAME/nestjs-example:latest"'"}' \
-            https://api.render.com/v1/deploy
-
+          name: deploy
+          command: '#e.g. ./deploy.sh'
+      - run:
+          name: found github actions config
+          command: ':'
 workflows:
-  build-and-deploy:
+  build-and-test:
     jobs:
-      - testing
-      - build-and-push:
+      - test-node
+      - build-node:
           requires:
-            - testing
-      - deploy:
-          requires:
-            - build-and-push
+            - test-node
+    # - deploy:
+    #     requires:
+    #       - build-node
