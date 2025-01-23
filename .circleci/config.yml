@@ -43,12 +43,12 @@ jobs:
           destination: node-build
   deploy:
     executor: docker/default
+      auth:
+        username: $DOCKERHUB_USERNAME
+        password: $DOCKERHUB_PASSWORD
     steps:
       - checkout
       - setup_remote_docker
-      - docker/login:
-          username: $DOCKERHUB_USERNAME
-          password: $DOCKERHUB_PASSWORD
       - docker/build:
           image: $DOCKERHUB_USERNAME/testcci:latest
       - docker/push:
