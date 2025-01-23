@@ -44,9 +44,9 @@ jobs:
   deploy:
     docker:
       - image: cimg/base:2022.09
-      auth:
-        username: $DOCKERHUB_USERNAME
-        password: $DOCKERHUB_PASSWORD
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
     steps:
       - checkout
       - setup_remote_docker
@@ -54,7 +54,7 @@ jobs:
           image: $DOCKERHUB_USERNAME/testcci:latest
       - docker/push:
           image: $DOCKERHUB_USERNAME/testcci:latest
-          
+
 workflows:
   build-and-test:
     jobs:
