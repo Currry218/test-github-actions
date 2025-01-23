@@ -60,6 +60,6 @@ workflows:
       - build-node:
           requires:
             - test-node
-    - deploy:
-        requires:
-          - build-node
+      - deploy:
+          requires:
+            - build-node
