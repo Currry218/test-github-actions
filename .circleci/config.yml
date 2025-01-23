@@ -42,7 +42,8 @@ jobs:
           path: ~/artifacts
           destination: node-build
   deploy:
-    executor: docker/default
+    docker:
+      - image: cimg/base:2022.09
       auth:
         username: $DOCKERHUB_USERNAME
         password: $DOCKERHUB_PASSWORD
@@ -53,6 +54,7 @@ jobs:
           image: $DOCKERHUB_USERNAME/testcci:latest
       - docker/push:
           image: $DOCKERHUB_USERNAME/testcci:latest
+          
 workflows:
   build-and-test:
     jobs:
